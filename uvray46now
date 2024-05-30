@@ -6,9 +6,9 @@ import calendar
 from datetime import date
 
 def printCalendar():
-    month = int(month_box.get())
-    year = int(year_box.get())
-    output_calendar = calendar.month
+    month = int(month_var.get())
+    year = int(year_var.get())
+    output_calendar = calendar.month (year, month)
     calendar_field.delete(1.0, 'end')
     calendar_field.insert('end', output_calendar)
 
