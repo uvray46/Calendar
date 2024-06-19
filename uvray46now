@@ -1,89 +1,125 @@
-import tkinter
-
-
-from tkinter import *
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
 import calendar
 from datetime import date
+import os
 
-def printCalendar():
+def print_calendar():
     month = int(month_var.get())
     year = int(year_var.get())
-    output_calendar = calendar.month (year, month)
-    calendar_field.delete(1.0, 'end')
-    calendar_field.insert('end', output_calendar)
+    output_calendar = calendar.month(year, month)
+    calendar_field.delete(1.0, tk.END)
+    calendar_field.insert(tk.END, output_calendar)
 
 def reset():
-    calendar_field.delete(1.0, 'end')
+    calendar_field.delete(1.0, tk.END)
     month_var.set(current_month)
     year_var.set(current_year)
-    month_box.config(textvariable=month_var)
-    year_box.config(textvariable=year_var)
 
 def close():
-    guiWindow.destroy()
+    gui_window.destroy()
+
+def select_day(event):
+    index = calendar_field.index(tk.CURRENT)
+    line, col = map(int, index.split('.'))
+    text_line = calendar_field.get(f"{line}.0", f"{line}.end")
+    words = text_line.split()
+    if col // 3 < len(words):
+        day = words[col // 3]
+        if day.isdigit():
+            selected_date = f"{year_var.get()}-{month_var.get():02}-{int(day):02}"
+            selected_date_label.config(text=f"Selected date: {selected_date}")
+            day_button.config(state=tk.NORMAL)
+
+def open_day_details_window():
+    selected_date = selected_date_label.cget('text').split(": ")[-1]
+    if selected_date:
+        day_details_window = tk.Toplevel(gui_window)
+        day_details_window.title("Day Details")
+        day_details_window.geometry('400x400')
+
+        selected_date_label_details = tk.Label(day_details_window, text=f"Selected Date: {selected_date}", font=('arial', '15'))
+        selected_date_label_details.pack(pady=10)
+
+        text_entry = tk.Entry(day_details_window, width=40, font=('arial', '12'))
+        text_entry.pack(pady=10)
+
+        text_scroll = scrolledtext.ScrolledText(day_details_window, width=50, height=10, font=('arial', '12'))
+        text_scroll.pack(pady=10)
+
+        notes_file = f"{selected_date}.txt"
+        if os.path.exists(notes_file):
+            with open(notes_file, 'r') as file:
+                content = file.read()
+                text_scroll.insert(tk.END, content)
+
+        def save_text():
+            entered_text = text_entry.get()
+            scrolled_text = text_scroll.get(1.0, tk.END)
+            with open(notes_file, 'w') as file:
+                file.write(f"Notes: {entered_text}\n")
+                file.write(scrolled_text)
+            messagebox.showinfo("Text Saved", f"Notes for {selected_date} have been saved.")
+
+        save_button = tk.Button(day_details_window, text="Save Text", bg="#A020F0", fg="#E0FFFF", font=('arial', '15'), command=save_text)
+        save_button.pack(pady=10)
+
+        close_button_details = tk.Button(day_details_window, text="Close", bg="#A020F0", fg="#E0FFFF", font=('arial', '15'), command=day_details_window.destroy)
+        close_button_details.pack(pady=10)
+    else:
+        messagebox.showwarning("No Date Selected", "Please select a date first.")
 
 if __name__ == "__main__":
-    guiWindow = Tk()
-    guiWindow.title("GUI Calendar")
-    guiWindow.geometry('500x550')
-    guiWindow.resizable(0, 0)
+    gui_window = tk.Tk()
+    gui_window.title("GUI Calendar")
+    gui_window.geometry('500x600')
+    gui_window.resizable(0, 0)
 
-    header_frame = Frame(guiWindow)
-    entry_frame = Frame(guiWindow)
-    result_frame = Frame(guiWindow)
-    button_frame = Frame(guiWindow)
+    header_frame = tk.Frame(gui_window)
+    entry_frame = tk.Frame(gui_window)
+    result_frame = tk.Frame(gui_window)
+    button_frame = tk.Frame(gui_window)
 
     header_frame.pack(expand=True, fill="both")
     entry_frame.pack(expand=True, fill="both")
     result_frame.pack(expand=True, fill="both")
     button_frame.pack(expand=True, fill="both")
 
-    header_label = Label(header_frame, text="CALENDAR",
-       font=('arial', '45', 'bold'), fg="#A020F0")
-
+    header_label = tk.Label(header_frame, text="CALENDAR", font=('arial', '45', 'bold'), fg="#A020F0")
     header_label.pack(expand=True, fill="both")
 
-    month_label = Label(entry_frame, text="Month:",
-       font=("arial", "20", "bold"), fg="#000000")
-
-    year_label = Label(entry_frame, text="Year:",
-       font=("arial", "20", "bold"), fg="#000000")
-
+    month_label = tk.Label(entry_frame, text="Month:", font=("arial", "20", "bold"), fg="#000000")
+    year_label = tk.Label(entry_frame, text="Year:", font=("arial", "20", "bold"), fg="#000000")
     month_label.place(x=30, y=0)
     year_label.place(x=275, y=0)
-    month_var = IntVar(entry_frame)
-    year_var = IntVar(entry_frame)
 
+    month_var = tk.IntVar(entry_frame)
+    year_var = tk.IntVar(entry_frame)
     current_month = date.today().month
     current_year = date.today().year
     month_var.set(current_month)
     year_var.set(current_year)
 
-    month_box = Spinbox(entry_frame, from_=1, to=12, width="10",
-       textvariable=month_var, font=('arial','15'))
-
-    year_box = Spinbox(entry_frame, from_=0000, to=3000, width="10",
-       textvariable=year_var,font=('arial','15'))
-
+    month_box = tk.Spinbox(entry_frame, from_=1, to=12, width="10", textvariable=month_var, font=('arial', '15'))
+    year_box = tk.Spinbox(entry_frame, from_=1900, to=3000, width="10", textvariable=year_var, font=('arial', '15'))
     month_box.place(x=130, y=5)
     year_box.place(x=360, y=5)
 
-    calendar_field = Text(result_frame, width=20, height=8,
-                          font=("courier", "18"), relief=RIDGE, borderwidth=2)
-
+    calendar_field = tk.Text(result_frame, width=20, height=8, font=("courier", "18"), relief=tk.RIDGE, borderwidth=2)
     calendar_field.pack()
 
-    display_button = Button(button_frame, text="DISPLAY", bg="#A020F0",
-                            fg="#E0FFFF", command=printCalendar, font=('arial', '15'))
-
-    reset_button = Button(button_frame, text="RESET", bg="#A020F0",
-                          fg="#E0FFFF", command=reset, font=('arial', '15'))
-
-    close_button = Button(button_frame, text="CLOSE", bg="#A020F0",
-                          fg="#E0FFFF", command=close, font=('arial', '15'))
-
-    display_button.place(x=55, y=0)
-    reset_button.place(x=210, y=0)
+    day_button = tk.Button(button_frame, text="DAY", bg="#A020F0", fg="#E0FFFF", command=open_day_details_window, font=('arial', '15'), state=tk.DISABLED)
+    display_button = tk.Button(button_frame, text="DISPLAY", bg="#A020F0", fg="#E0FFFF", command=print_calendar, font=('arial', '15'))
+    reset_button = tk.Button(button_frame, text="RESET", bg="#A020F0", fg="#E0FFFF", command=reset, font=('arial', '15'))
+    close_button = tk.Button(button_frame, text="CLOSE", bg="#A020F0", fg="#E0FFFF", command=close, font=('arial', '15'))
+    day_button.place(x=25, y=0)
+    display_button.place(x=100, y=0)
+    reset_button.place(x=250, y=0)
     close_button.place(x=350, y=0)
 
-    guiWindow.mainloop()
+    calendar_field.bind("<Button-1>", select_day)
+
+    selected_date_label = tk.Label(button_frame, text="", font=('arial', '15'), fg="#000000")
+    selected_date_label.place(x=100, y=40)
+
+    gui_window.mainloop()
